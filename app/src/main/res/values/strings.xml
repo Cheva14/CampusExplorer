@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Campus Explorer</string>
+    <string name="signout">SIGNOUT</string>
+    <string name="statistics">STATISTICS</string>
+    <string name="campus_explorer">CAMPUS EXPLORER</string>
+    <string name="image_of_something">image of something</string>
+    <string name="title_activity_maps">MapsActivity</string>
 </resources>
