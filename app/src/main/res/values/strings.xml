@@ -5,4 +5,5 @@
     <string name="campus_explorer">CAMPUS EXPLORER</string>
     <string name="image_of_something">image of something</string>
     <string name="title_activity_maps">MapsActivity</string>
+    <string name="mapbutton">mapButton</string>
 </resources>

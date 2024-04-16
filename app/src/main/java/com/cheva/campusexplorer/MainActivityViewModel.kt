@@ -15,6 +15,7 @@ class MainActivityViewModel: ViewModel() {
     val uid: LiveData<String?> get() = _uid
     init {
         _uid.postValue(auth.uid)
+
     }
 
     fun logout() {
