@@ -1,38 +1,29 @@
 package com.cheva.campusexplorer
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import com.cheva.campusexplorer.databinding.ActivityMapsBinding
-import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
-
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
-
-    private lateinit var mMap: GoogleMap
-    private lateinit var binding: ActivityMapsBinding
+class MainActivity : AppCompatActivity() {
 
     private val vm: MainActivityViewModel by viewModels()
     private val statisticsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK) {
                 val data = it.data?.getIntExtra("data", 0)
-                println("stats sent: $data")
             }
         }
     private val mapsLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK) {
                 val data = it.data?.getIntExtra("data", 0)
-                println("maps sent: $data")
             }
         }
 
@@ -63,32 +54,38 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         locationPermissionRequest.launch(arrayOf(
             android.Manifest.permission.ACCESS_FINE_LOCATION,
             android.Manifest.permission.ACCESS_COARSE_LOCATION))
-        println("$locationPermissionRequest")
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         grantPerms()
-
-        binding = ActivityMapsBinding.inflate(layoutInflater)
-        setContentView(binding.root)
         setContentView(R.layout.activity_main)
-//        setContentView(binding.root)
 
         val logoutBtn = findViewById<Button>(R.id.logoutBtn)
         val statisticsBtn = findViewById<Button>(R.id.statisticsBtn)
         val mapBtn = findViewById<Button>(R.id.mapButton)
+        val recyclerView = findViewById<RecyclerView>(R.id.my_list)
 
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.map) as SupportMapFragment
-        mapFragment.getMapAsync(this)
+//        val places = arrayOf(PlaceDetails("Lubbers Stadium", "The Grand Valley State University Laker football team enjoys the friendly confines of Arend D. Lubbers Stadium, one of the top Division II facilities in the nation.", isSelected = false, isFound = false),PlaceDetails("my home", "this is my home", isSelected = false, isFound = true))
+        fun showDesc(place: PlaceDetails): Unit {
+            vm.showDesc(place)
+            println("You selected ${place.title}")
+        }
+        recyclerView.adapter = MyAdapter(vm.places.value!!, ::showDesc) // Adapter class in Step 3
+        // Use single column layout
+        recyclerView.layoutManager = LinearLayoutManager(this)
 
         vm.uid.observe(this) {
             it?.let {
                 println("Your UID: $it")
             }
         }
+
+        vm.places.observe(this) {
+            recyclerView.adapter?.notifyDataSetChanged() // iOS: UITableView.reloadData()
+        }
+
         logoutBtn.setOnClickListener {
             finish()
             vm.logout()
@@ -108,17 +105,8 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         }
 
     }
-
-    override fun onMapReady(googleMap: GoogleMap) {
-        mMap = googleMap
-
-        // Add a marker in Sydney and move the camera
-        val sydney = LatLng(-34.0, 151.0)
-        mMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+    override fun onResume() {
+        super.onResume()
+        vm.setPlaceDetailsArrayList()
     }
-//    override fun onResume() {
-//        super.onResume()
-//        print("on resume, maybe fetch any new data")
-//    }
 }

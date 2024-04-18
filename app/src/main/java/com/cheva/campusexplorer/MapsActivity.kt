@@ -13,6 +13,7 @@ import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.viewModels
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -20,7 +21,6 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.MarkerOptions
 import com.cheva.campusexplorer.databinding.ActivityMapsBinding
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.common.api.ResolvableApiException
@@ -39,9 +39,11 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.model.PlaceLikelihood
 import com.google.android.libraries.places.api.net.FindCurrentPlaceRequest
 import com.google.android.material.snackbar.Snackbar
-
+import com.google.firebase.firestore.GeoPoint
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
+
+    private val mapVM: MapsViewModel by viewModels()
 
     private lateinit var mMap: GoogleMap
     private lateinit var binding: ActivityMapsBinding
@@ -64,6 +66,10 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private var locationOverlayView: View? = null
 
+    // Variable to hold the timestamp of the last Snackbar display
+    private var lastSnackbarDisplayTime: Long = 0
+
+    @SuppressLint("InflateParams")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -105,20 +111,34 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         val tmp = this
 
+        // Inside your activity or fragment
+        mapVM.locations.observe(this) { locations ->
+            // Perform UI updates or other actions using the `locations` list
+            addCircles(locations)
+        }
+
         locationCallback = object : LocationCallback() {
+            val addedCirclePositions = mutableListOf<LatLng>()
             override fun onLocationResult(p0: LocationResult) {
                 p0 ?: return
-                println("locationResult before loop: $p0")
                 for (location in p0.locations){
-                    // Update UI with location data
-                    // ...
-                    val circleOptions = CircleOptions()
-                        .center(LatLng(location.latitude, location.longitude))
-                        .radius(100.0) // In meters
-                        .strokeColor(Color.argb(100, 0, 255, 255))
-                        .fillColor(Color.argb(100, 0, 255, 255))
+                    val roundedLat = "%.4f".format(location.latitude).toDouble()
+                    val roundedLng = "%.4f".format(location.longitude).toDouble()
+                    val latLng = LatLng(roundedLat, roundedLng)
+                    if (!addedCirclePositions.contains(latLng)) {
+                        val circleOptions = CircleOptions()
+                            .center(latLng)
+                            .radius(100.0) // In meters
+                            .strokeColor(Color.argb(100, 0, 255, 255))
+                            .fillColor(Color.argb(100, 0, 255, 255))
 
-//                    val circle = mMap.addCircle(circleOptions)
+                        mapVM.addLocationToFirestore(roundedLat, roundedLng)
+
+                        val circle = mMap.addCircle(circleOptions)
+
+                        // Add the position to the list of added positions
+                        addedCirclePositions.add(latLng)
+                    }
 
                 }
                 // Call findCurrentPlace and handle the response (first check that the user has granted permission).
@@ -138,7 +158,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                                     showLocationSnackbar(locationName)
                                 } else if (locationName == "Recreation Center" && locationLikelihood > 0.3) {
                                     showLocationSnackbar(locationName)
-                                } else if (locationName == "GVSU Laker Store" && locationLikelihood > 0.3) {
+                                } else if (locationName == "GVSU Laker Store" && locationLikelihood > 0.1) {
                                     showLocationSnackbar(locationName)
                                 } else if (locationName == "Cook Carillon Tower (CCT)" && locationLikelihood > 0.1) {
                                     showLocationSnackbar(locationName)
@@ -164,15 +184,22 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     // Function to show the Snackbar
     private fun showLocationSnackbar(locationName: String) {
-        val snackbar = Snackbar.make(binding.root, "Congratulations! You found the $locationName!", Snackbar.LENGTH_LONG)
-        snackbar.show()
+        val currentTimeMillis = System.currentTimeMillis()
+        // Check if at least 1 minute has passed since the last Snackbar display
+        if (currentTimeMillis - lastSnackbarDisplayTime >= 60000) {
+            val snackbar = Snackbar.make(binding.root, "Congratulations! You found the $locationName!", Snackbar.ANIMATION_MODE_SLIDE)
+            snackbar.show()
+            // Update the last Snackbar display time
+            lastSnackbarDisplayTime = currentTimeMillis
+
+            mapVM.updateFirestore(locationName)
+        }
     }
 
     @SuppressLint("SetTextI18n")
     override fun onResume() {
         super.onResume()
         val data = intent.getIntExtra("data", 0)
-        println("data: $data")
         if (requestingLocationUpdates) startLocationUpdates()
     }
 
@@ -182,10 +209,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     }
 
     private fun stopLocationUpdates() {
+        println("Stopping Location Updates")
         fusedLocationClient.removeLocationUpdates(locationCallback)
     }
 
     private fun startLocationUpdates() {
+        println("starting Location Updates")
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -225,17 +254,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-//        if (ActivityCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.ACCESS_FINE_LOCATION
-//            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.ACCESS_COARSE_LOCATION
-//            ) != PackageManager.PERMISSION_GRANTED
-//        ) {
-//            return
-//        }
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -262,12 +280,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 mCurrentLocation = location
                 // Add a marker in location and move the camera
                 val myPin = LatLng(location?.latitude!!, location.longitude)
-                mMap.addMarker(MarkerOptions().position(myPin).title("Marker in Location"))
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(myPin))
             }
         createLocationRequest()
-        println("mCurrentLocation: $mCurrentLocation")
-
         startLocationUpdates()
     }
 
@@ -287,7 +302,6 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // All location settings are satisfied. The client can initialize
             // location requests here.
             // ...
-            println("mCurrentLocation inside request: $mCurrentLocation")
         }
 
         task.addOnFailureListener { exception ->
@@ -303,6 +317,24 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     // Ignore the error.
                 }
             }
+        }
+    }
+
+    private fun addCircles(locations:  List<GeoPoint>) {
+        for (location in locations){
+            val lat = location.latitude
+            val lng = location.longitude
+            val latLng = LatLng(lat, lng)
+
+            val circleOptions = CircleOptions()
+                .center(latLng)
+                .radius(100.0) // In meters
+                .strokeColor(Color.argb(100, 0, 255, 255))
+                .fillColor(Color.argb(100, 0, 255, 255))
+
+            mapVM.addLocationToFirestore(lat, lng)
+
+            val circle = mMap.addCircle(circleOptions)
         }
     }
 
