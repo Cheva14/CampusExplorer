@@ -15,19 +15,7 @@
         android:layout_marginBottom="8dp"
         android:text="@string/signout"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/statisticsBtn" />
-
-    <Button
-        android:id="@+id/statisticsBtn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:text="@string/statistics"
-        app:layout_constraintBottom_toBottomOf="@+id/logoutBtn"
-        app:layout_constraintEnd_toStartOf="@+id/logoutBtn"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/logoutBtn" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/titleLabel"

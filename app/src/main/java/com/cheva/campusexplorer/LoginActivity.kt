@@ -16,8 +16,6 @@ class LoginActivity: AppCompatActivity()  {
         setContentView(R.layout.activity_login)
         val email = findViewById<EditText>(R.id.uEmail)
         val password = findViewById<EditText>(R.id.uPass)
-        email.text.append("me@test.com")    // for quick testing
-        password.text.append("123456")
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
 
         findViewById<Button>(R.id.loginBtn).setOnClickListener {

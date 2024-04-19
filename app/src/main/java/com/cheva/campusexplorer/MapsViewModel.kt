@@ -15,6 +15,8 @@ class MapsViewModel: ViewModel() {
 
     private val _locations = MutableLiveData<List<GeoPoint>>()
     val locations: LiveData<List<GeoPoint>> get() = _locations
+    private val _placesFound = MutableLiveData<HashMap<String, Boolean>>()
+    val placesFound: LiveData<HashMap<String, Boolean>> get() = _placesFound
 
     private val auth = Firebase.auth
     private val db = Firebase.firestore
@@ -29,6 +31,13 @@ class MapsViewModel: ViewModel() {
                 .addOnSuccessListener { documentSnapshot ->
                     if (documentSnapshot.exists()) {
                         val locationsFromFirestore = documentSnapshot.get("locations") as? List<GeoPoint>
+                        val placesMap = HashMap<String, Boolean>()
+                        placesMap["Cook Carillon Tower (CCT)"] = documentSnapshot.getBoolean("Cook Carillon Tower (CCT)") ?: false
+                        placesMap["GVSU Laker Store"] = documentSnapshot.getBoolean("GVSU Laker Store") ?: false
+                        placesMap["Lubbers Stadium"] = documentSnapshot.getBoolean("Lubbers Stadium") ?: false
+                        placesMap["Mary Idema Pew Library (LIB)"] = documentSnapshot.getBoolean("Mary Idema Pew Library (LIB)") ?: false
+                        placesMap["Recreation Center"] = documentSnapshot.getBoolean("Recreation Center") ?: false
+                        _placesFound.postValue(placesMap)
                         _locations.postValue(locationsFromFirestore!!)
                     } else {
                         println("User document does not exist in Firestore")
@@ -38,8 +47,6 @@ class MapsViewModel: ViewModel() {
                     println("Error fetching user document from Firestore: $exception")
                 }
         }
-
-//        _uid.postValue(auth.uid)
     }
 
     fun updateFirestore(locationName: String) {
@@ -53,6 +60,9 @@ class MapsViewModel: ViewModel() {
                     println("Error updating user details to Firestore: $exception")
                 }
         }
+    }
+    fun updatePlacesFound(locationName: String) {
+        _placesFound.value?.set(locationName,true)
     }
 
     fun addLocationToFirestore(lat: Double, lng: Double) {

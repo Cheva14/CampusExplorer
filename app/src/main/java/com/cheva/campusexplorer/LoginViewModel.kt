@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
@@ -34,7 +35,7 @@ class LoginViewModel: ViewModel() {
                         "GVSU Laker Store" to false,
                         "Cook Carillon Tower (CCT)" to false,
                         "Mary Idema Pew Library (LIB)" to false,
-//                        "locations" to intArrayOf(),
+                        "locations" to arrayListOf<GeoPoint>() // Initialize empty array
                     )
                     db.collection("users")
                         .document(it.user?.uid!!) // Set document ID to user UID

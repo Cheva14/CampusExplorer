@@ -63,9 +63,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val logoutBtn = findViewById<Button>(R.id.logoutBtn)
-        val statisticsBtn = findViewById<Button>(R.id.statisticsBtn)
+//        val statisticsBtn = findViewById<Button>(R.id.statisticsBtn)
         val mapBtn = findViewById<Button>(R.id.mapButton)
         val recyclerView = findViewById<RecyclerView>(R.id.my_list)
+
 
 //        val places = arrayOf(PlaceDetails("Lubbers Stadium", "The Grand Valley State University Laker football team enjoys the friendly confines of Arend D. Lubbers Stadium, one of the top Division II facilities in the nation.", isSelected = false, isFound = false),PlaceDetails("my home", "this is my home", isSelected = false, isFound = true))
         fun showDesc(place: PlaceDetails): Unit {
@@ -90,13 +91,11 @@ class MainActivity : AppCompatActivity() {
             finish()
             vm.logout()
         }
-        statisticsBtn.setOnClickListener {
-
-
-            val toStatistics = Intent(this, StatisticsActivity::class.java)
-            toStatistics.putExtra("data", 0)
-            statisticsLauncher.launch(toStatistics)
-        }
+//        statisticsBtn.setOnClickListener {
+//            val toStatistics = Intent(this, StatisticsActivity::class.java)
+//            toStatistics.putExtra("data", 0)
+//            statisticsLauncher.launch(toStatistics)
+//        }
         mapBtn.setOnClickListener {
             val toMaps = Intent(this, MapsActivity::class.java)
             toMaps.putExtra("data", 0)

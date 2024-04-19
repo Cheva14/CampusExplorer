@@ -33,6 +33,7 @@ import com.google.android.gms.location.LocationSettingsRequest
 import com.google.android.gms.location.LocationSettingsResponse
 import com.google.android.gms.location.SettingsClient
 import com.google.android.gms.maps.model.CircleOptions
+import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.Place
@@ -116,6 +117,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             // Perform UI updates or other actions using the `locations` list
             addCircles(locations)
         }
+        mapVM.placesFound.observe(this) { placesFound ->
+            addMarkers(placesFound)
+        }
 
         locationCallback = object : LocationCallback() {
             val addedCirclePositions = mutableListOf<LatLng>()
@@ -141,6 +145,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                     }
 
                 }
+
                 // Call findCurrentPlace and handle the response (first check that the user has granted permission).
                 if (ContextCompat.checkSelfPermission(tmp, Manifest.permission.ACCESS_FINE_LOCATION) ==
                     PackageManager.PERMISSION_GRANTED) {
@@ -184,15 +189,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
     // Function to show the Snackbar
     private fun showLocationSnackbar(locationName: String) {
-        val currentTimeMillis = System.currentTimeMillis()
-        // Check if at least 1 minute has passed since the last Snackbar display
-        if (currentTimeMillis - lastSnackbarDisplayTime >= 60000) {
+        if (mapVM.placesFound.value?.get(locationName) == false) {
             val snackbar = Snackbar.make(binding.root, "Congratulations! You found the $locationName!", Snackbar.ANIMATION_MODE_SLIDE)
             snackbar.show()
-            // Update the last Snackbar display time
-            lastSnackbarDisplayTime = currentTimeMillis
-
             mapVM.updateFirestore(locationName)
+            mapVM.updatePlacesFound(locationName)
+            addMarker(locationName)
         }
     }
 
@@ -279,9 +281,9 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
                 // Got last known location. In some rare situations this can be null.
                 mCurrentLocation = location
                 // Add a marker in location and move the camera
-                val myPin = LatLng(location?.latitude!!, location.longitude)
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(myPin))
-            }
+                val myLoc = LatLng(location?.latitude!!, location.longitude)
+                val zoomLevel = 15f // Adjust the zoom level as per your requirement
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(myLoc, zoomLevel))            }
         createLocationRequest()
         startLocationUpdates()
     }
@@ -338,4 +340,92 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         }
     }
 
+    private fun addMarkers(placesFound: HashMap<String, Boolean>) {
+        val library = LatLng(42.9630, -85.8902)
+        val tower = LatLng(42.9635, -85.8886)
+        val store = LatLng(42.9652, -85.8895)
+        val rec = LatLng(42.9669, -85.8898)
+        val stadium = LatLng(42.9690, -85.8947)
+        if (placesFound["Mary Idema Pew Library (LIB)"] == true) {
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(library)
+                    .title("Mary Idema Pew Library (LIB)")
+            )
+        }
+        if (placesFound["Cook Carillon Tower (CCT)"] == true) {
+
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(tower)
+                    .title("Cook Carillon Tower (CCT)")
+            )}
+        if (placesFound["GVSU Laker Store"] == true) {
+
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(store)
+                    .title("GVSU Laker Store")
+            )}
+        if (placesFound["Recreation Center"] == true) {
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(rec)
+                    .title("Recreation Center")
+            )
+        }
+        if (placesFound["Lubbers Stadium"] == true) {
+
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(stadium)
+                    .title("Lubbers Stadium")
+
+            )
+        }
+    }
+    private fun addMarker(locationName: String) {
+        val library = LatLng(42.9630, -85.8902)
+        val tower = LatLng(42.9635, -85.8886)
+        val store = LatLng(42.9652, -85.8895)
+        val rec = LatLng(42.9669, -85.8898)
+        val stadium = LatLng(42.9690, -85.8947)
+        if ("Mary Idema Pew Library (LIB)" == locationName) {
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(library)
+                    .title("Mary Idema Pew Library (LIB)")
+            )
+        }
+        if ("Cook Carillon Tower (CCT)" == locationName) {
+
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(tower)
+                    .title("Cook Carillon Tower (CCT)")
+            )}
+        if ("GVSU Laker Store" == locationName) {
+
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(store)
+                    .title("GVSU Laker Store")
+            )}
+        if ("Recreation Center" == locationName) {
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(rec)
+                    .title("Recreation Center")
+            )
+        }
+        if ("Lubbers Stadium" == locationName) {
+
+            mMap.addMarker(
+                MarkerOptions()
+                    .position(stadium)
+                    .title("Lubbers Stadium")
+
+            )
+        }
+    }
 }
